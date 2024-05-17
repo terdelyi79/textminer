@@ -1,7 +1,8 @@
-use std::fmt::{self, Display};
+use std::{fmt::{self, Display}, io::ErrorKind};
 
 #[derive(Debug)]
 pub struct Error {
+    pub eof: bool,
     pub message: String
 }
 
@@ -15,8 +16,7 @@ impl std::error::Error for Error {}
 
 impl From<std::io::Error> for Error
 {
-    fn from(value: std::io::Error) -> Self {
-        dbg!(value);
-        Error { message: String::from("IO Error") }
+    fn from(error: std::io::Error) -> Self {        
+        Error { eof: error.kind() == ErrorKind::UnexpectedEof, message: error.to_string() }
     }
 }

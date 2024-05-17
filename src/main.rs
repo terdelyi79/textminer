@@ -1,14 +1,12 @@
-mod eof;
+mod body_text_extractor;
+pub mod error;
 mod html;
 mod text_extractor;
-mod body_text_extractor;
 mod utf8_reader;
 mod utf8_writer;
-pub mod error;
 
-use axum::{body::Body, routing::post, Router};
+use axum::{body::Body, http::StatusCode, response::IntoResponse, routing::post, Router};
 use body_text_extractor::BodyTextExtractor;
-
 
 #[tokio::main]
 async fn main() {
@@ -20,8 +18,7 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-async fn extract(request_body: Body) -> Body {
-    BodyTextExtractor::extract(request_body).await
-    // let mut html_extractor = HtmlTextExtractor {};
-    // html_extractor.process(request_body).await    
+async fn extract(request_body: Body) -> impl IntoResponse {
+    // The status code 202 (ACCEPTED) indicates that HTTP header is sent before processing is finished, therefore status is not known
+    (StatusCode::ACCEPTED, BodyTextExtractor::extract(request_body).await)
 }

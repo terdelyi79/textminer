@@ -1,21 +1,26 @@
+use super::parser_context::ParserContext;
 use crate::error::Error;
 use tokio::io::{AsyncRead, AsyncWrite};
 
-use super::parser_context::ParserContext;
-
+// Parse HTML entities like &nbsp; or &amp;
 pub struct EntityParser {}
 
 impl EntityParser {
+    // Method is called when an & character indicated that an entity is starting
     pub async fn parse<R: AsyncRead + Unpin + Send, W: AsyncWrite + Unpin + Send>(
         context: &mut ParserContext<'_, R, W>,
     ) -> Result<(), Error> {
         loop {
             match context.input.read_char().await? {
+                // ';' character indicates the nd of the entity
                 ';' => {
+                    // Extract the entity and write to the output
                     EntityParser::extract_entity(context).await?;
                     context.buffer.clear();
+
                     return Ok(());
                 }
+                // All other caharcters are simply stored in the buffer
                 ch => {
                     context.buffer.push(ch);
                 }
@@ -23,18 +28,25 @@ impl EntityParser {
         }
     }
 
+    // Function to extract the entity from its name or code
     async fn extract_entity<R: AsyncRead + Unpin + Send, W: AsyncWrite + Unpin + Send>(
         context: &mut ParserContext<'_, R, W>,
     ) -> Result<(), Error> {
         let char_code: u32;
+
+        // The '#' character indicated that entity is defined by its code in unicode
         if context.buffer.starts_with('#') {
             let mut buf = context.buffer.strip_prefix('#').unwrap();
+
+            // If the 'x' prefix is used, then code is in hexadecimal format
             if buf.starts_with('x') {
                 buf = buf.strip_prefix('x').expect("Already checked.");
                 char_code = u32::from_str_radix(buf, 16).unwrap();
+            // Code is in decimal format otherwise
             } else {
                 char_code = buf.parse::<u32>().unwrap();
             }
+        // Entity is defined by a name
         } else {
             char_code = match context.buffer.as_str() {
                 "amp" => 38,
@@ -216,6 +228,7 @@ impl EntityParser {
                 _ => 0,
             }
         }
+        // Write the character defined by the entity to the output
         context
             .write(char::from_u32(char_code).expect("HTML should contain valid entity codes."))
             .await?;
