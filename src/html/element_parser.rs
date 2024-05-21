@@ -28,6 +28,10 @@ impl ElementParser {
                     if !context.buffer.starts_with("</") && !context.buffer.ends_with("/>") {
                         let element_name =
                             String::from(&context.buffer[1..name_length - 1]).to_lowercase();
+                         
+                        if element_name == "!doctype" {
+                            return Ok(None);
+                        }
 
                         let old_output_enabled = context.output_enabled;
 
