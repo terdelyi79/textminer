@@ -70,4 +70,12 @@ impl<'a, W: AsyncWrite + Unpin + Send> Utf8Writer<'a, W> {
 
         Ok(())
     }
+
+    #[inline]
+    pub async fn write_string(&mut self, s: &str) -> Result<(), Error> {
+        for ch in s.chars() {        
+            self.write_char(ch).await?;
+        }
+        Ok(())
+    }
 }

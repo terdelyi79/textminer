@@ -2,7 +2,7 @@ use axum::body::Body;
 use futures::TryStreamExt;
 use std::io::ErrorKind;
 use tokio_util::io::{ReaderStream, StreamReader};
-use crate::{html::html_text_extractor::HtmlTextExtractor, text_extractor::TextExtractor};
+use crate::{html::html_text_extractor::HtmlTextExtractor, text_extractor::{OutputFormat, TextExtractor}};
 
 // Implements text extraction from a Body object to other one. (Both HTTP request and response contains bodies.)
 pub struct BodyTextExtractor {}
@@ -10,7 +10,7 @@ pub struct BodyTextExtractor {}
 impl BodyTextExtractor {
 
     // Extracts text from a body object and returns it in another body object
-    pub async fn extract(request_body: Body) -> Body    
+    pub async fn extract(request_body: Body, output_format: OutputFormat) -> Body    
     {
         let stream = request_body.into_data_stream();
 
@@ -21,7 +21,7 @@ impl BodyTextExtractor {
         tokio::spawn(async move {
             let mut reader =
                 StreamReader::new(stream.map_err(|e| std::io::Error::new(ErrorKind::Other, e)));            
-            let result = HtmlTextExtractor {}.extract(&mut reader, &mut input).await;            
+            let result = HtmlTextExtractor {}.extract(&mut reader, &mut input, output_format).await;            
 
             if let Err(error) = result {
                 println!("An error occured while pocessing the reuqest: {}", error.message);

@@ -18,8 +18,13 @@ impl Processor {
             // Elements to exclude from the output
             "script" | "style" => Ok(Some(false)),
             // Elements needing extra new line characters in the output
-            "br" | "p" | "div" | "td" | "th" | "li" => {
+            "br" | "td" | "th" => {
                 context.write('\n').await?;
+                Ok(None)
+            },
+            // Elements indicating a separated text block
+            "p" | "div" | "li" => {                
+                context.output.add_break(&format!("<{}>", element_name)).await?;
                 Ok(None)
             }
             // Include content of element if content of parent element is included
@@ -34,8 +39,8 @@ impl Processor {
     ) -> Result<(), Error> {
         match element_name {
             // Elements needing extra new line characters in the output
-            "title" | "p" => {
-                context.write('\n').await?;
+            "title" | "p" => {                
+                context.output.add_break(&format!("</{}>", element_name)).await?;
             }
             _ => {}
         }
